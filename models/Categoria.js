@@ -8,7 +8,8 @@ const Categoria = new Schema({
     },
     slug: {
         type: String,
-        required: true
+        required: true,
+        unique: true
     },
     date: {
         type: Date,

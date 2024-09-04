@@ -10,6 +10,9 @@
     const flash = require("connect-flash")
     require("./models/Postagem")
     const Postagem = mongoose.model("postagens")
+    require("./models/Categoria")
+    const Categoria = mongoose.model("categorias")
+    const usuarios = require("./routes/usuario")
 // Configurações 
     //sessão
         app.use(session({
@@ -36,7 +39,12 @@
         app.use(express.json())
 
     //handlebars
-        app.engine('handlebars', handlebars.engine({defaultlayout: 'main'}))
+        app.engine('handlebars', handlebars.engine({defaultlayout: 'main',
+            runtimeOptions: {
+                allowProtoPropertiesByDefault: true,
+                allowProtoMethodsByDefault: true,
+            }
+        }))
         app.set('view engine', 'handlebars');
 
     //Mongoose
@@ -51,7 +59,7 @@
         app.use(express.static(path.join(__dirname,"public")))
 
     //Rotas
-        app.use('/admin', admin)
+        
         app.get('/', (req,res) => {
             Postagem.find().lean().populate("categoria").sort({data:"desc"}).then((postagens) => {
                 res.render("index", {postagens: postagens})
@@ -75,19 +83,45 @@
             })
         })
 
-        app.get("/admin/login/", (req,res) => {
-            res.send('aqui ficará o Login')
+       app.get('/categorias', (req,res) => {
+        Categoria.find().lean().then((categorias) => {
+            console
+            res.render("categorias/index", {categorias: categorias})
+        }).catch((err) => {
+            req.flash("error_msg", "Houve um erro Interno ao listar as categorias !")
+            res.redirect("/")
         })
+       })
 
-        app.get("/admin/Registro/", (req,res) => {
-            res.send('aqui ficará o Cadastro')
+
+       app.get("/categorias/:slug", (req,res) => {
+        Categoria.findOne({slug: req.params.slug}).lean().then((categoria) => {
+            if(categoria){
+                   Postagem.find({categoria: categoria._id}).then((postagens) => {
+                        res.render("categorias/postagens", {postagens: postagens, categoria: categoria})
+
+                   }).catch((err) => {
+                    req.flash("Houve um erro ao listar os posts!")
+                    res.redirect("/")
+                   })     
+
+            }else{
+                req.flash("error_msg", "Esta categoria não existe")
+                res.redirect("/")
+            }
+
+        }).catch((err) => {
+            req.flash("error_msg", "Houve um erro interno ao acessar os Posts!")
+            res.redirect("/")
         })
+       })
 
 
         app.get("/404", (req,res) => {
             res.send("Erro 404!!!")
         })
-        
+        app.use('/admin', admin)
+        app.use('/usuarios', usuarios)
 //Porta Principal
 const PORT = 3000
 app.listen(PORT,() => {

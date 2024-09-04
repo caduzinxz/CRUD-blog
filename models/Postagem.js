@@ -16,7 +16,8 @@ const Postagem = new Schema({
       },
       slug: {
         type: String,
-        required: true
+        required: true,
+        unique: true
       },
       categoria: {
         type: Schema.Types.ObjectId,
